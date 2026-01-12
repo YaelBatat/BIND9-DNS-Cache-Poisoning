@@ -1,0 +1,53 @@
+**DNS Cache Poisoning Attack Explanation**
+
+This document explains our implementation of the BIND9 DNS cache poisoning attack.
+The attack successfully poisoned the DNS resolver's cache to return 6.6.6.6 for
+www.example.cybercourse.com.
+
+Attack Components:
+1. Attacker's Authoritative Name Server (ex2_server.c)
+2. Attacker's Client (ex2_client.c)
+
+Attack Flow:
+1. The client sends an initial query for www.attacker.cybercourse.com to the recursive resolver (BIND9).
+2. Our malicious authoritative server receives queries and analyzes their Transaction IDs (TXIDs):
+   - For odd TXIDs: Responds with a CNAME to wwX.attacker.cybercourse.com (where X increments)
+   - For even TXIDs: Responds with a CNAME to www.example.cybercourse.com and notifies the client
+
+3. When an even TXID is detected:
+   - Server sends both the TXID and resolver's source port to the client
+   - This triggers the client's spoofing phase
+
+4. The client then:
+   - Calculates 10 possible next TXIDs using the LFSR prediction algorithm
+   - Sends spoofed responses appearing to come from the root server (192.168.1.204)
+   - Each response maps www.example.cybercourse.com to 6.6.6.6
+
+Implementation Details:
+
+Server (ex2_server.c):
+- Listens on port 53 for DNS queries
+- Implements TXID parity check (odd/even)
+- For even TXIDs, sends CNAME record and notifies client
+- Uses ldns library for DNS packet manipulation
+- Maintains counter for odd TXID responses
+- Implements proper clean-up and error handling
+
+Client (ex2_client.c):
+- Implements LFSR-based TXID prediction algorithm
+- Creates raw sockets for spoofed response injection
+- Constructs spoofed DNS responses with:
+  * Proper IP and UDP headers
+  * Correct DNS flags (QR, AA, RA)
+  * Matching question section
+  * A record with poisoned IP (6.6.6.6)
+  * EDNS0 OPT record
+- Calculates proper checksums
+- Times responses to beat legitimate answer
+
+The attack succeeds by exploiting:
+1. BIND9's predictable TXID generation
+2. Fixed UDP source ports in BIND9 4.1
+
+This implementation effectively demonstrates the cache poisoning vulnerability in BIND9 by injecting
+false DNS records into the resolver's cache.
