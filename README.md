@@ -47,27 +47,31 @@ sequenceDiagram
         Note right of Client: Maps Target -> 6.6.6.6
     end
 ```
+
+
 ## 🛠️ Technical Implementation
 
 ### 1. The Server (`ex2_server.c`)
-* [cite_start]Listens on port `53` using standard sockets[cite: 211].
-* [cite_start]**Parity Check:** Analyzes the parity of the incoming Transaction ID (TXID)[cite: 209].
-* [cite_start]**Synchronization:** When an **even** TXID is detected, it sends the TXID and the resolver's port to the Attacker Client via a private UDP channel[cite: 209]. [cite_start]This creates the window of opportunity for the spoofing[cite: 232].
+* Listens on port `53` using standard sockets.
+* **Parity Check:** Analyzes the parity of the incoming Transaction ID (TXID).
+* **Synchronization:** When an **even** TXID is detected, it sends the TXID and the resolver's port to the Attacker Client via a private UDP channel. This creates the window of opportunity for the spoofing.
 
 ### 2. The Client (`ex2_client.c`)
-* [cite_start]**LFSR Prediction:** Implements the algorithm to predict the next 10 pseudo-random Transaction IDs based on the leaked state[cite: 209, 241].
-* [cite_start]**Raw Sockets:** Uses `SOCK_RAW` to construct custom UDP/IP packets from scratch[cite: 210].
+* **LFSR Prediction:** Implements the algorithm to predict the next 10 pseudo-random Transaction IDs based on the leaked state.
+* **Raw Sockets:** Uses `SOCK_RAW` to construct custom UDP/IP packets from scratch.
 * **Spoofing:**
-    * [cite_start]Fabricates DNS responses appearing to come from the Root Server (`192.168.1.204`)[cite: 210].
+    * Fabricates DNS responses appearing to come from the Root Server (`192.168.1.204`).
     * Calculates correct IP and UDP checksums manually.
-    * [cite_start]Sets the Answer Record to `6.6.6.6`[cite: 207, 210].
+    * Sets the Answer Record to `6.6.6.6`.
 
 ## 🚀 Usage
 
 ### Prerequisites
 * Linux Environment (with `root` privileges for Raw Sockets).
-* [cite_start]**Libraries:** `ldns`, `libpcap`[cite: 246].
-* [cite_start]Docker environment (as defined in the course lab)[cite: 226].
+* **Libraries:** `ldns`, `libpcap`.
+* **Docker environment** (as defined in the course lab).
+
+
 ### Compilation
 Compile both components using GCC:
 
